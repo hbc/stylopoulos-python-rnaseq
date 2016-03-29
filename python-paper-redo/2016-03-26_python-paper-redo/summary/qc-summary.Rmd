@@ -134,44 +134,6 @@ qualimap_run = "Mapped" %in% colnames(summarydata)
 do_quality = "Mapped.reads" %in% colnames(summarydata)
 ```
 
-## Mapped reads
-```{r mapped-plot, eval=qualimap_run}
-ggplot(summarydata, aes(x=Name, y=Mapped)) +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90)) +
-    geom_bar(stat="identity") +
-    ylab("mapped reads") + xlab("")
-```
-
-```{r mapped-plot-noqualimap, eval=!qualimap_run & do_quality}
-ggplot(summarydata, aes(x=Name, y=Mapped.reads)) +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90)) +
-    geom_bar(stat="identity") +
-    ylab("mapped reads") + xlab("")
-```
-
-## Genomic mapping rate
-```{r mapping-rate-plot, eval=qualimap_run}
-ggplot(summarydata, aes(x=Name, y=Mapping.Rate)) +
-    geom_bar(stat="identity") +
-    ylab("mapping rate") + xlab("") +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90))
-```
-
-```{r mapping-rate-plot-noqualimap, eval=!qualimap_run & do_quality}
-ggplot(summarydata, aes(x=Name, y=Mapped.reads.pct)) +
-    geom_bar(stat="identity") +
-    ylab("mapping rate") + xlab("") +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90))
-```
-
 ## Number of genes detected
 ```{r genes-detected-plot}
 dd = data.frame(Name=colnames(counts), Genes.Detected = colSums(counts > 0))
@@ -181,50 +143,6 @@ ggplot(dd, aes(x=Name, y=Genes.Detected)) +
     theme(panel.grid.major = element_line(size = .5, color = "grey"),
           axis.text.x = element_text(angle=90)) +
     ylab("genes detected") + xlab("")
-```
-
-## Gene detection saturation
-```{r saturation-plot, eval=do_quality}
-dd = data.frame(Mapped=summarydata$Mapped, Genes.Detected = colSums(counts > 0))
-ggplot(dd, aes(x=Mapped, y=Genes.Detected)) +
-    geom_point() +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90)) +
-    ylab("genes detected") + xlab("reads mapped")
-```
-
-## Exonic mapping rate
-```{r exonic-mapping-plot, eval="Exonic.Rate" %in% colnames(summarydata)}
-ggplot(summarydata, aes(x=Name, y=Exonic.Rate)) +
-    geom_bar(stat="identity") +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90)) +
-    ylab("exonic mapping rate") + xlab("")
-```
-
-## rRNA mapping rate
-```{r check-rRNA-eval}
-eval_rRNA = "rRNA_rate" %in% colnames(summarydata) & !sum(is.na(summarydata$rRNA_rate)) == nrow(summarydata)
-```
-```{r rRNA-rate-plot, eval=eval_rRNA & do_quality}
-ggplot(summarydata, aes(x=Name, y=rRNA_rate)) +
-    geom_bar(stat="identity") +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90)) +
-    ylab("rRNA rate") + xlab("")
-```
-
-## Estimated fragment length of paired-end reads
-```{r fragment-length-plot, eval="Fragment.Length.Mean" %in% colnames(summarydata) & do_quality}
-ggplot(summarydata, aes(x=Name, y=Fragment.Length.Mean)) +
-    geom_bar(stat="identity") +
-    theme_bw(base_size=10) +
-    theme(panel.grid.major = element_line(size = .5, color = "grey"),
-          axis.text.x = element_text(angle=90)) +
-    ylab("fragment length") + xlab("")
 ```
 
 ## Boxplot of log10 counts per gene
@@ -281,38 +199,17 @@ heatmap_fn(cor(normalized_counts, method="spearman"))
 ```
 
 ## PCA plot
+We can see that the `240 hour` and `Fasted` samples look similar. The largest
+differences are at the times directly after eating, and `96 hours` is in
+between the fasted and eating state. It looks like there are short term
+changes that gradually reset and last for < 10 days with feeding.
+
 ```{r pca, eval=ncol(counts) > 1}
 dds = DESeqDataSetFromMatrix(countData=counts, colData=summarydata, design=~Name)
 vst = varianceStabilizingTransformation(dds)
-plotPCA(vst, intgroup=c("Name"))
+plotPCA(vst, intgroup=c("fed"))
 ```
 
-## Heatmap by concordance correlation coefficient
-http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004075
-
-```{r propcor-heatmap, eval=ncol(counts) > 1}
-propcor = function(x, y) {
-    x = log(x + 0.1)
-    y = log(y + 0.1)
-    num = 2 * cov(x, y)
-    denom = var(x) + var(y)
-return(num/denom)}
-
-do_propcor = function(x) {
-     mat = list()
-     for(i in seq_len(ncol(x))) {
-         for(j in seq_len(ncol(x))) {
-        x2 = x[, i]
-        y2 = x[, j]
-        mat = c(mat, propcor(x2, y2)) } }
-    mat = unlist(mat)
-    mat = matrix(mat, ncol(x), ncol(x))
-    colnames(mat) = colnames(x)
-    rownames(mat) = colnames(x)
-    return(mat)}
-
-heatmap_fn(do_propcor(normalized_counts))
-```
 ```{r deseq2-tximport-helper-functions}
 # snagged from development version of DESeq
 DESeqDataSetFromTximport <- function(txi, colData, design, ...)
@@ -416,7 +313,9 @@ write.table(res, file="fasted-vs-6-hours.tsv", sep="\t", col.names=TRUE,
 ```
 
 There are `r nrow(sig)` genes differentially expressed between `Fasted` and
-`6 hours` after feeding. The paper found 2,489.
+`6 hours` after feeding.
+
+Results were written to [fasted-vs-6-hours.tsv](fasted-vs-6-hours.tsv).
 
 ## Fasted vs. 12 hours
 ```{r}
@@ -429,6 +328,8 @@ write.table(res, file="fasted-vs-12-hours.tsv", sep="\t", col.names=TRUE,
 There are `r nrow(sig)` genes differentially expressed between `Fasted` and
 `12 hours` after feeding.
 
+Results were written to [fasted-vs-12-hours.tsv](fasted-vs-12-hours.tsv).
+
 ## Fasted vs. 24 hours
 ```{r}
 res = results(dds, contrast=c("fed", "Fasted", "24"))
@@ -438,6 +339,8 @@ write.table(res, file="fasted-vs-24-hours.tsv", sep="\t", col.names=TRUE,
 ```
 There are `r nrow(sig)` genes differentially expressed between `Fasted` and
 `24 hours` after feeding.
+
+Results were written to [fasted-vs-24-hours.tsv](fasted-vs-24-hours.tsv).
 
 ## Fasted vs. 96 hours
 ```{r}
@@ -449,6 +352,8 @@ write.table(res, file="fasted-vs-96-hours.tsv", sep="\t", col.names=TRUE,
 There are `r nrow(sig)` genes differentially expressed between `Fasted` and
 `96 hours` after feeding.
 
+Results were written to [fasted-vs-96-hours.tsv](fasted-vs-96-hours.tsv).
+
 ## Fasted vs. 240 hours
 ```{r}
 res = results(dds, contrast=c("fed", "Fasted", "240"))
@@ -458,6 +363,8 @@ write.table(res, file="fasted-vs-240-hours.tsv", sep="\t", col.names=TRUE,
 ```
 There are `r nrow(sig)` genes differentially expressed between `Fasted` and
 `240 hours` after feeding.
+
+Results were written to [fasted-vs-240-hours.tsv](fasted-vs-240-hours.tsv).
 
 ## Wrap-up
 We broadly recapitulate the results of the paper, at least in terms of

@@ -40,7 +40,7 @@ Overview
     +     counts = read.table(counts_file, header = TRUE, row.names = "id", check.names = FALSE)
     + }
 
-    2016-03-28 23:46:04 INFO::Using gene counts calculated from the Salmon transcript counts.
+    2016-03-29 00:03:49 INFO::Using gene counts calculated from the Salmon transcript counts.
 
     > counts = counts[, order(colnames(counts)), drop = FALSE]
     > colnames(counts) = gsub(".counts", "", colnames(counts))
@@ -98,28 +98,6 @@ Quality control metrics
     > qualimap_run = "Mapped" %in% colnames(summarydata)
     > do_quality = "Mapped.reads" %in% colnames(summarydata)
 
-Mapped reads
-------------
-
-    > ggplot(summarydata, aes(x = Name, y = Mapped)) + theme_bw(base_size = 10) + 
-    +     theme(panel.grid.major = element_line(size = 0.5, color = "grey"), axis.text.x = element_text(angle = 90)) + 
-    +     geom_bar(stat = "identity") + ylab("mapped reads") + xlab("")
-
-    > ggplot(summarydata, aes(x = Name, y = Mapped.reads)) + theme_bw(base_size = 10) + 
-    +     theme(panel.grid.major = element_line(size = 0.5, color = "grey"), axis.text.x = element_text(angle = 90)) + 
-    +     geom_bar(stat = "identity") + ylab("mapped reads") + xlab("")
-
-Genomic mapping rate
---------------------
-
-    > ggplot(summarydata, aes(x = Name, y = Mapping.Rate)) + geom_bar(stat = "identity") + 
-    +     ylab("mapping rate") + xlab("") + theme_bw(base_size = 10) + theme(panel.grid.major = element_line(size = 0.5, 
-    +     color = "grey"), axis.text.x = element_text(angle = 90))
-
-    > ggplot(summarydata, aes(x = Name, y = Mapped.reads.pct)) + geom_bar(stat = "identity") + 
-    +     ylab("mapping rate") + xlab("") + theme_bw(base_size = 10) + theme(panel.grid.major = element_line(size = 0.5, 
-    +     color = "grey"), axis.text.x = element_text(angle = 90))
-
 Number of genes detected
 ------------------------
 
@@ -130,42 +108,6 @@ Number of genes detected
     +     xlab("")
 
 ![](qc-summary_files/figure-markdown_strict/genes-detected-plot-1.png)
-
-Gene detection saturation
--------------------------
-
-    > dd = data.frame(Mapped = summarydata$Mapped, Genes.Detected = colSums(counts > 
-    +     0))
-    > ggplot(dd, aes(x = Mapped, y = Genes.Detected)) + geom_point() + theme_bw(base_size = 10) + 
-    +     theme(panel.grid.major = element_line(size = 0.5, color = "grey"), axis.text.x = element_text(angle = 90)) + 
-    +     ylab("genes detected") + xlab("reads mapped")
-
-Exonic mapping rate
--------------------
-
-    > ggplot(summarydata, aes(x = Name, y = Exonic.Rate)) + geom_bar(stat = "identity") + 
-    +     theme_bw(base_size = 10) + theme(panel.grid.major = element_line(size = 0.5, 
-    +     color = "grey"), axis.text.x = element_text(angle = 90)) + ylab("exonic mapping rate") + 
-    +     xlab("")
-
-rRNA mapping rate
------------------
-
-    > eval_rRNA = "rRNA_rate" %in% colnames(summarydata) & !sum(is.na(summarydata$rRNA_rate)) == 
-    +     nrow(summarydata)
-
-    > ggplot(summarydata, aes(x = Name, y = rRNA_rate)) + geom_bar(stat = "identity") + 
-    +     theme_bw(base_size = 10) + theme(panel.grid.major = element_line(size = 0.5, 
-    +     color = "grey"), axis.text.x = element_text(angle = 90)) + ylab("rRNA rate") + 
-    +     xlab("")
-
-Estimated fragment length of paired-end reads
----------------------------------------------
-
-    > ggplot(summarydata, aes(x = Name, y = Fragment.Length.Mean)) + geom_bar(stat = "identity") + 
-    +     theme_bw(base_size = 10) + theme(panel.grid.major = element_line(size = 0.5, 
-    +     color = "grey"), axis.text.x = element_text(angle = 90)) + ylab("fragment length") + 
-    +     xlab("")
 
 Boxplot of log10 counts per gene
 --------------------------------
@@ -231,9 +173,15 @@ Correlation (Spearman) heatmap of TMM-normalized counts
 PCA plot
 --------
 
+We can see that the `240 hour` and `Fasted` samples look similar. The
+largest differences are at the times directly after eating, and
+`96 hours` is in between the fasted and eating state. It looks like
+there are short term changes that gradually reset and last for \< 10
+days with feeding.
+
     > dds = DESeqDataSetFromMatrix(countData = counts, colData = summarydata, design = ~Name)
     > vst = varianceStabilizingTransformation(dds)
-    > plotPCA(vst, intgroup = c("Name"))
+    > plotPCA(vst, intgroup = c("fed"))
 
 ![](qc-summary_files/figure-markdown_strict/pca-1.png)
 
@@ -375,7 +323,9 @@ Fasted vs. 6 hours
     +     row.names = TRUE, quote = FALSE)
 
 There are 2539 genes differentially expressed between `Fasted` and
-`6 hours` after feeding. The paper found 2,489.
+`6 hours` after feeding.
+
+Results were written to [fasted-vs-6-hours.tsv](fasted-vs-6-hours.tsv).
 
 Fasted vs. 12 hours
 -------------------
@@ -388,6 +338,9 @@ Fasted vs. 12 hours
 There are 2925 genes differentially expressed between `Fasted` and
 `12 hours` after feeding.
 
+Results were written to
+[fasted-vs-12-hours.tsv](fasted-vs-12-hours.tsv).
+
 Fasted vs. 24 hours
 -------------------
 
@@ -398,6 +351,9 @@ Fasted vs. 24 hours
 
 There are 4031 genes differentially expressed between `Fasted` and
 `24 hours` after feeding.
+
+Results were written to
+[fasted-vs-24-hours.tsv](fasted-vs-24-hours.tsv).
 
 Fasted vs. 96 hours
 -------------------
@@ -410,6 +366,9 @@ Fasted vs. 96 hours
 There are 1985 genes differentially expressed between `Fasted` and
 `96 hours` after feeding.
 
+Results were written to
+[fasted-vs-96-hours.tsv](fasted-vs-96-hours.tsv).
+
 Fasted vs. 240 hours
 --------------------
 
@@ -420,6 +379,9 @@ Fasted vs. 240 hours
 
 There are 0 genes differentially expressed between `Fasted` and
 `240 hours` after feeding.
+
+Results were written to
+[fasted-vs-240-hours.tsv](fasted-vs-240-hours.tsv).
 
 Wrap-up
 -------
