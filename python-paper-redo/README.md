@@ -1,5 +1,5 @@
 This is a re-analysis of some old data looking at changes in the gut of the python before and after feeding. The original authors of the paper
-didn't make some of the processed data available, but the raw data is up so we are regenerate it. We can also improve on their analysis,
+didn't make some of the processed data available, but the raw data is up so we can regenerate it. We can also improve on their analysis,
 the metadata I saw in the SRA project description described some suboptimal steps. The project on SRA is SRP051827. I think we also get
 a side benefit of having a much nicer annotated genome than they had.
 
