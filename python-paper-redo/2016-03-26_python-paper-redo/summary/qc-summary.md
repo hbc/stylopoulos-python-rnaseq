@@ -1,7 +1,7 @@
 Overview
 ========
 
-A description of what was done is [here](../README.md). Briefly, we
+A description of what was done is [here](../../README.md). Briefly, we
 downloaded the data, combined all of the technical replicates and ran
 [bcbio-nextgen](https://bcbio-nextgen.readthedocs.org/en/latest/) in the
 new fast RNA-seq mode that skips alignment and quality control and just
@@ -46,7 +46,7 @@ runs [Salmon](http://salmon.readthedocs.org/en/latest/) on the data.
     +     counts = read.table(counts_file, header = TRUE, row.names = "id", check.names = FALSE)
     + }
 
-    2016-03-29 00:12:27 INFO::Using gene counts calculated from the Salmon transcript counts.
+    2016-03-29 00:24:04 INFO::Using gene counts calculated from the Salmon transcript counts.
 
     > counts = counts[, order(colnames(counts)), drop = FALSE]
     > colnames(counts) = gsub(".counts", "", colnames(counts))
