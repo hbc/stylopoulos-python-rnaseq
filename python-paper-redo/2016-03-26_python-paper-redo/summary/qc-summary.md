@@ -1,6 +1,12 @@
 Overview
 ========
 
+A description of what was done is [here](../README.md). Briefly, we
+downloaded the data, combined all of the technical replicates and ran
+[bcbio-nextgen](https://bcbio-nextgen.readthedocs.org/en/latest/) in the
+new fast RNA-seq mode that skips alignment and quality control and just
+runs [Salmon](http://salmon.readthedocs.org/en/latest/) on the data.
+
     > basicConfig()
     > project_summary = "/Users/rory/cache/stylopoulos-python-rnaseq/python-paper-redo/2016-03-26_python-paper-redo/project-summary.csv"
     > counts_file = "/Users/rory/cache/stylopoulos-python-rnaseq/python-paper-redo/2016-03-26_python-paper-redo/combined.counts"
@@ -40,7 +46,7 @@ Overview
     +     counts = read.table(counts_file, header = TRUE, row.names = "id", check.names = FALSE)
     + }
 
-    2016-03-29 00:03:49 INFO::Using gene counts calculated from the Salmon transcript counts.
+    2016-03-29 00:12:27 INFO::Using gene counts calculated from the Salmon transcript counts.
 
     > counts = counts[, order(colnames(counts)), drop = FALSE]
     > colnames(counts) = gsub(".counts", "", colnames(counts))
@@ -184,39 +190,6 @@ days with feeding.
     > plotPCA(vst, intgroup = c("fed"))
 
 ![](qc-summary_files/figure-markdown_strict/pca-1.png)
-
-Heatmap by concordance correlation coefficient
-----------------------------------------------
-
-<http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004075>
-
-    > propcor = function(x, y) {
-    +     x = log(x + 0.1)
-    +     y = log(y + 0.1)
-    +     num = 2 * cov(x, y)
-    +     denom = var(x) + var(y)
-    +     return(num/denom)
-    + }
-    > 
-    > do_propcor = function(x) {
-    +     mat = list()
-    +     for (i in seq_len(ncol(x))) {
-    +         for (j in seq_len(ncol(x))) {
-    +             x2 = x[, i]
-    +             y2 = x[, j]
-    +             mat = c(mat, propcor(x2, y2))
-    +         }
-    +     }
-    +     mat = unlist(mat)
-    +     mat = matrix(mat, ncol(x), ncol(x))
-    +     colnames(mat) = colnames(x)
-    +     rownames(mat) = colnames(x)
-    +     return(mat)
-    + }
-    > 
-    > heatmap_fn(do_propcor(normalized_counts))
-
-![](qc-summary_files/figure-markdown_strict/propcor-heatmap-1.png)
 
     > # snagged from development version of DESeq
     > DESeqDataSetFromTximport <- function(txi, colData, design, ...) {
