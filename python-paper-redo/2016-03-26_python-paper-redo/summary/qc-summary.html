@@ -576,12 +576,12 @@ div.tocify {
 +<span class="st">     </span><span class="dt">row.names =</span> <span class="ot">TRUE</span>, <span class="dt">quote =</span> <span class="ot">FALSE</span>)</code></pre>
 <p>There are 1561 genes tagged as differentially expressed. We wrote out the full set to <a href="fasted-vs-late-cross-section.tsv" class="uri">fasted-vs-late-cross-section.tsv</a>.</p>
 </div>
-<div id="download-all-results" class="section level2">
-<h2>Download all results</h2>
+</div>
+<div id="download-results" class="section level1">
+<h1>Download results</h1>
 <pre class="sourceCode r"><code class="sourceCode r">&gt;<span class="st"> </span>files =<span class="st"> </span><span class="kw">c</span>(<span class="kw">Sys.glob</span>(<span class="st">&quot;*.tsv&quot;</span>), <span class="kw">Sys.glob</span>(<span class="st">&quot;*.md&quot;</span>), <span class="kw">Sys.glob</span>(<span class="st">&quot;*.Rmd&quot;</span>))
 &gt;<span class="st"> </span><span class="kw">zip</span>(<span class="st">&quot;python-paper-redo-results.zip&quot;</span>, <span class="dt">files =</span> files)</code></pre>
 <p>A zip file of all the results, the markdown report and the Rmarkdown code that generates everything can be downloaded <a href="python-paper-redo-results.zip">here</a></p>
-</div>
 </div>
 
 

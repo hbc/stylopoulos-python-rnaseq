@@ -20,7 +20,7 @@
     -   Fasting vs late feeding for the mucosa samples
     -   Fasting vs early feeding for the cross-section samples
     -   Fasting vs late feeding for the cross-section samples
-    -   Download all results
+-   Download results
 
 Overview
 ========
@@ -483,8 +483,8 @@ There are 4402 genes tagged as differentially expressed. We wrote out the full s
 
 There are 1561 genes tagged as differentially expressed. We wrote out the full set to [fasted-vs-late-cross-section.tsv](fasted-vs-late-cross-section.tsv).
 
-Download all results
---------------------
+Download results
+================
 
 ``` r
 > files = c(Sys.glob("*.tsv"), Sys.glob("*.md"), Sys.glob("*.Rmd"))

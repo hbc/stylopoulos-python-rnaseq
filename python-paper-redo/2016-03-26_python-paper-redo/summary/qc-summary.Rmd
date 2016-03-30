@@ -482,7 +482,7 @@ write.table(res, file="fasted-vs-late-cross-section.tsv", sep="\t", col.names=TR
 There are `r nrow(sig)` genes tagged as differentially expressed. We wrote out
 the full set to [fasted-vs-late-cross-section.tsv](fasted-vs-late-cross-section.tsv).
 
-## Download all results
+# Download results
 ```{r}
 files = c(Sys.glob("*.tsv"), Sys.glob("*.md"), Sys.glob("*.Rmd"))
 zip("python-paper-redo-results.zip", files=files)
