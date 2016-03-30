@@ -1,9 +1,14 @@
 ---
- md_document:
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    highlight: zenburn
+    theme: flatly
+  md_document:
     variant: markdown_github
     toc: true
-    highlight: zenburn
-    theme: united
 ---
 
 ```{r setup, echo=FALSE}
@@ -101,6 +106,7 @@ summarydata$cs = ifelse(summarydata$tissue %in% c("CS", "CS+M"), "yes", "no")
 summarydata$m = ifelse(summarydata$tissue %in% c("M", "CS+M"), "yes", "no")
 metadata = summarydata[, !colnames(summarydata) %in% known_columns, drop=FALSE]
 metadata = metadata[, colSums(is.na(metadata)) < nrow(metadata)]
+metadata = metadata[, !colnames(metadata) %in% c("sample", "python")]
 ```
 
 Here we turn the `fed` column into a factor, and make sure that `fasted` is the
@@ -214,6 +220,12 @@ dds = DESeqDataSetFromMatrix(countData=counts, colData=summarydata, design=~Name
 vst = varianceStabilizingTransformation(dds)
 plotPCA(vst, intgroup=c("fed"))
 ```
+
+We can also see that there is maybe some separation if we squint
+along PC2 regarding which tissue type it is from. It looks like the CS+M tissues
+are more similar to the CS tissues than the M tissue.
+
+plotPCA(vst, intgroup=c("tissue"))
 
 ```{r deseq2-tximport-helper-functions}
 # snagged from development version of DESeq
@@ -371,6 +383,109 @@ There are `r nrow(sig)` genes differentially expressed between `Fasted` and
 
 Results were written to [fasted-vs-240-hours.tsv](fasted-vs-240-hours.tsv).
 
-## Wrap-up
+# Wrap-up
 We broadly recapitulate the results of the paper, at least in terms of
 number of genes differentially expressed at each timepoint.
+
+# Interactions of tissue type with feeding
+We didn't look at if there were any interactions between tissue and time. Nick
+mentioned on our Skype chat that he wanted to look at these as well. To
+do that, we will group the times into three groups so we're not looking
+at a huge number of comparisons:
+
+1. fasting, which will be a combination of fasting and 240 hours after feeding
+2. early, which will be a combination of 6, 12 hours
+3. late, which will be a combination of 24 and 96 hours
+
+We picked these because fasting and 240 look similar, 6 and 12 look fairly
+similar and 24 and 96 are when we see the effects start to wear off,
+and the samples to progress back to being more like the fasting state.
+
+We'll look at the interaction of tissue on these three time points after feeding.
+
+```{r}
+summarydata$fed_block = ifelse(summarydata$fed %in% c("Fasted", "240"), "fasted",
+                        ifelse(summarydata$fed %in% c("6", "12", "24"),
+                               "early", "late"))
+summarydata$fed_block = factor(summarydata$fed_block, levels=c("fasted", "early", "late"))
+summarydata$cs = factor(summarydata$cs, levels=c("no", "yes"))
+```
+
+Since we're mainly looking for four comparisons:
+
+1. mucosal tissue fasting vs mucosal tissue early after feeding
+2. mucosal tissue fasting vs mucosal tissue late after feeding
+3. cross section tissue fasting vs cross section tissue early after feeding
+4. cross section tissue fasting vs cross section tissue late after feeding
+
+We can set up a variable that has all of these, and just test for differences
+between that, which will be easier than figuring out how to specify all of
+the contrasts with interaction terms.
+
+```{r}
+summarydata$tissue_type = ifelse(summarydata$cs == "yes", "cs", "m")
+summarydata$fed_tissue = paste(summarydata$fed_block, summarydata$tissue_type, sep="_")
+```
+
+Now we can the fit the model:
+
+```{r}
+interaction_model = ~fed_tissue
+dds = DESeqDataSetFromTximport(txi.salmon, colData=summarydata,
+                               design=interaction_model)
+dds = DESeq(dds)
+```
+
+Now we can test for specific interaction effects.
+
+### Fasting vs early feeding for the mucosa samples
+
+```{r}
+res = results(dds, contrast=c("fed_tissue", "fasted_m", "early_m"))
+sig = subset(res, padj < 0.05)
+write.table(res, file="fasted-vs-early-mucosa.tsv", sep="\t", col.names=TRUE,
+            row.names=TRUE, quote=FALSE)
+```
+
+There are `r nrow(sig)` genes tagged as differentially expressed. We wrote out
+the full set to [fasted-vs-early-mucosa.tsv](fasted-vs-early-mucosa.tsv).
+
+### Fasting vs late feeding for the mucosa samples
+
+```{r}
+res = results(dds, contrast=c("fed_tissue", "fasted_m", "late_m"))
+sig = subset(res, padj < 0.05)
+write.table(res, file="fasted-vs-late-mucosa.tsv", sep="\t", col.names=TRUE,
+            row.names=TRUE, quote=FALSE)
+```
+
+There are `r nrow(sig)` genes tagged as differentially expressed. We wrote out
+the full set to [fasted-vs-late-mucosa.tsv](fasted-vs-late-mucosa.tsv).
+
+### Fasting vs early feeding for the cross-section samples
+```{r}
+res = results(dds, contrast=c("fed_tissue", "fasted_cs", "early_cs"))
+sig = subset(res, padj < 0.05)
+write.table(res, file="fasted-vs-early-cross-section.tsv", sep="\t", col.names=TRUE,
+            row.names=TRUE, quote=FALSE)
+```
+There are `r nrow(sig)` genes tagged as differentially expressed. We wrote out
+the full set to [fasted-vs-early-cross-section.tsv](fasted-vs-early-cross-section.tsv).
+
+### Fasting vs late feeding for the cross-section samples
+```{r}
+res = results(dds, contrast=c("fed_tissue", "fasted_cs", "late_cs"))
+sig = subset(res, padj < 0.05)
+write.table(res, file="fasted-vs-late-cross-section.tsv", sep="\t", col.names=TRUE,
+            row.names=TRUE, quote=FALSE)
+```
+There are `r nrow(sig)` genes tagged as differentially expressed. We wrote out
+the full set to [fasted-vs-late-cross-section.tsv](fasted-vs-late-cross-section.tsv).
+
+## Download all results
+```{r}
+files = c(Sys.glob("*.tsv"), Sys.glob("*.md"), Sys.glob("*.Rmd"))
+zip("python-paper-redo-results.zip", files=files)
+```
+A zip file of all the results, the markdown report and the Rmarkdown code
+that generates everything can be downloaded [here](python-paper-redo-results.zip)
